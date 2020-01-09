@@ -47,7 +47,7 @@ using Test
   end
 
   @testset "test_whitelisted_longdesc_schemes_are_allowed" begin
-    stuff = """<img longdesc="http://longdesc.com" src="./foo.jpg"></img>"""
+    stuff = """<img longdesc="http://longdesc.com"src="./foo.jpg"></img>"""
     html  = HTMLSanitizer.sanitize(stuff)
     @test stuff == html
   end
