@@ -94,7 +94,7 @@ using Test
       <tfoot><tr><td>Sum</td></tr></tfoot>
       <tbody><tr><td>1</td></tr></tbody>
       </table>"""
-    @test replace(orig, '\n' => "") == HTMLSanitizer.sanitize(orig)
+    @test replace(orig, "\n" => "") == replace(HTMLSanitizer.sanitize(orig), "\n" => "")
   end
 
   @testset "test_summary_tag_are_not_removed" begin
@@ -116,10 +116,34 @@ using Test
           <summary>Baz</summary>
         </details>
         Qux
-      </details>
-    """
-    @test replace(orig, r"[\s\n]" => "") == replace(HTMLSanitizer.sanitize(orig), r"[\s\n]" => "")
+      </details>"""
+    @test replace(orig, "\n" => "") == replace(HTMLSanitizer.sanitize(orig), "\n" => "")
   end
+end
+
+@testset "preserve relevant whitespace" begin
+  orig = """
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta description="test page"></meta>
+    </head>
+    <body>
+      <p>A simple test page.</p>
+      <a></a>
+      <a></a>
+      <pre>
+          <code>
+  foo
+  bar
+  baz
+          </code>
+      </pre>
+    </body>
+  </html>
+  """
+  expected = "<HTML>\n\n  \n    \n  \n  \n    <p>A simple test page.</p>\n    <a></a>\n    <a></a>\n    <pre>\n        <code>\nfoo\nbar\nbaz\n        </code>\n    </pre>\n  \n\n</HTML>"
+  @test sanitize(orig, isfragment=false) == expected
 end
 
 include("malicious_html.jl")

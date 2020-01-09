@@ -14,7 +14,8 @@ Sanitizes the HTML input according to `whitelist`.
 - `prettyprint`: Returns a prettier multiline string instead of a somewhat minified version.
 """
 function sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIST, prettyprint = false)
-    doc = parsehtml(input)
+    input_preserve_ws = replace(input, r"(\s+)"s => s" 🐑\1🐑 ")
+    doc = parsehtml(input_preserve_ws)
 
     sanitize_bfs(doc.root, whitelist)
 
@@ -22,6 +23,8 @@ function sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIS
     print(out, doc.root, pretty = prettyprint)
 
     out = String(take!(out))
+    out = replace(out, r"\s?🐑(\s+)🐑\s?"s => s"\1")
+
     if isfragment
         out = replace(out, r"^<HTML>" => "")
         out = replace(out, r"</HTML>$" => "")
@@ -30,7 +33,9 @@ function sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIS
     end
 end
 
-reparent!(node, parent) = node.parent = parent
+reparent!(_, _) = nothing
+
+reparent!(node::HTMLElement, parent) = node.parent = parent
 
 # HTMLText isn't mutable, so this does nothing. Will lead to inconsistencies, but ¯\_(ツ)_/¯.
 reparent!(node::HTMLText, parent) = nothing
@@ -70,7 +75,8 @@ function sanitize_element(el::HTMLElement{TAG}, whitelist) where TAG
             return Gumbo.HTMLText("")
         end
         @debug("Replacing `$(tag)` with its contents.")
-        return sanitize_element.(el.children, Ref(whitelist))
+        out = sanitize_element.(el.children, Ref(whitelist))
+        return isempty(out) ? Gumbo.HTMLText("") : out
     end
 
     el = sanitize_attributes(el, whitelist)
