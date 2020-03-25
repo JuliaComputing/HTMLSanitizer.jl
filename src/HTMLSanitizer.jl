@@ -14,16 +14,13 @@ Sanitizes the HTML input according to `whitelist`.
 - `prettyprint`: Returns a prettier multiline string instead of a somewhat minified version.
 """
 function sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIST, prettyprint = false)
-    input_preserve_ws = replace(input, r"(\s+)"s => s" 🐑\1🐑 ")
-    doc = parsehtml(input_preserve_ws)
-
+    doc = parsehtml(input, preserve_whitespace=true)
     sanitize_bfs(doc.root, whitelist)
 
     out = IOBuffer()
     print(out, doc.root, pretty = prettyprint)
 
     out = String(take!(out))
-    out = replace(out, r"\s?🐑(\s+)🐑\s?"s => s"\1")
 
     if isfragment
         out = replace(out, r"^<HTML>" => "")
@@ -33,12 +30,7 @@ function sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIS
     end
 end
 
-reparent!(_, _) = nothing
-
-reparent!(node::HTMLElement, parent) = node.parent = parent
-
-# HTMLText isn't mutable, so this does nothing. Will lead to inconsistencies, but ¯\_(ツ)_/¯.
-reparent!(node::HTMLText, parent) = nothing
+reparent!(node, parent) = node.parent = parent
 
 function sanitize_bfs(tree, whitelist)
     i = 1
@@ -50,7 +42,7 @@ function sanitize_bfs(tree, whitelist)
             # reparent all nodes
             reparent!.(sanitized, Ref(tree))
             splice!(tree.children, i, sanitized)
-            i += length(sanitized)
+            # don't increment i here so the newly inserted nodes are sanitized in the next iteration
         else
             # reparent node
             reparent!(sanitized, tree)
@@ -75,7 +67,7 @@ function sanitize_element(el::HTMLElement{TAG}, whitelist) where TAG
             return Gumbo.HTMLText("")
         end
         @debug("Replacing `$(tag)` with its contents.")
-        out = sanitize_element.(el.children, Ref(whitelist))
+        out = el.children
         return isempty(out) ? Gumbo.HTMLText("") : out
     end
 
@@ -89,6 +81,8 @@ sanitize_element(el::HTMLElement{:HTML}, whitelist) = el
 sanitize_element(el::HTMLText, whitelist) = el
 
 const REGEX_PROTOCOL = r"\A\s*([^\/#]*?)(?:\:|&#0*58|&#x0*3a)"i
+
+sanitize_attributes(el, whitelist) = el
 
 function sanitize_attributes(el::HTMLElement{TAG}, whitelist) where TAG
     tag = string(TAG)
@@ -128,9 +122,12 @@ function sanitize_attributes(el::HTMLElement{TAG}, whitelist) where TAG
     return el
 end
 
-function is_relative_url(url)
-    startswith(url, "./")
-end
+# A relative URL either
+# 1. starts with `/` (root-relative).
+# 2. starts with `//` (protocol-relative).
+# 3. starts with `../`/`./` (relative directory traversal)
+# 4. doesn't start with either of the above and doesn't start with a protocol (e.g. `foo/bar.html`)
+is_relative_url(url) = occursin(r"\.?\.?//?"i, url) || !occursin(r"^\w+://"i, url)
 
 """
 Default whitelist. Allows many elements and attributes, but crucially removes `<script>` elements
@@ -142,7 +139,7 @@ const WHITELIST = Dict(
         "div","ins","del","sup","sub","p","ol","ul","table","thead","tbody","tfoot","blockquote",
         "dl","dt","dd","kbd","q","samp","var","hr","ruby","rt","rp","li","tr","td","th","s","strike",
         "summary","details","caption","figure","figcaption","abbr","bdo","cite","dfn","mark",
-        "small","span","time","wbr"
+        "small","span","time","wbr","center"
     ],
     :remove_contents => ["script"],
     :attributes => Dict(

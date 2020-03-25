@@ -47,7 +47,7 @@ using Test
   end
 
   @testset "test_whitelisted_longdesc_schemes_are_allowed" begin
-    stuff = """<img longdesc="http://longdesc.com"src="./foo.jpg"></img>"""
+    stuff = """<img longdesc="http://longdesc.com" src="./foo.jpg"></img>"""
     html  = HTMLSanitizer.sanitize(stuff)
     @test stuff == html
   end
@@ -72,7 +72,12 @@ using Test
     @test stuff == html
   end
 
-  @testset "test_script_contents_are_removed" begin
+  @testset "test_script_contents_are_removed1" begin
+    orig = """<div><script>JavaScript!</script></div>"""
+    @test "<div></div>" == HTMLSanitizer.sanitize(orig)
+  end
+
+  @testset "test_script_contents_are_removed2" begin
     orig = """<script>JavaScript!</script>"""
     @test "" == HTMLSanitizer.sanitize(orig)
   end
@@ -142,8 +147,43 @@ end
     </body>
   </html>
   """
-  expected = "<HTML>\n\n  \n    \n  \n  \n    <p>A simple test page.</p>\n    <a></a>\n    <a></a>\n    <pre>\n        <code>\nfoo\nbar\nbaz\n        </code>\n    </pre>\n  \n\n</HTML>"
+  expected = "<HTML>\n    \n  \n  \n    <p>A simple test page.</p>\n    <a></a>\n    <a></a>\n    <pre>        <code>\nfoo\nbar\nbaz\n        </code>\n    </pre>\n  \n\n</HTML>"
   @test sanitize(orig, isfragment=false) == expected
+end
+
+@testset "urls" begin
+  @testset "relative" begin
+    orig = """<img src="foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+
+    orig = """<img src="/foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+
+    orig = """<img src="//foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+
+    orig = """<img src="./foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+
+    orig = """<img src="/asd://foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+  end
+
+  @testset "protocols" begin
+    orig = """<img src="asd://foo/bar.html"></img>"""
+    @test sanitize(orig) == "<img></img>"
+
+    orig = """<img src="http://foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+
+    orig = """<img src="https://foo/bar.html"></img>"""
+    @test sanitize(orig) == orig
+  end
+end
+
+@testset "edge case" begin
+  html = read(joinpath(@__DIR__, "testhtml.html"), String)
+  sanitize(html) == read(joinpath(@__DIR__, "testhtml_out.html"), String)
 end
 
 include("malicious_html.jl")
