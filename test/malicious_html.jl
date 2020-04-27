@@ -31,7 +31,7 @@
     end
 
     @testset "should not be possible to inject <script> via a malformed <img> tag" begin
-      @test """<img></img>">""" == HTMLSanitizer.sanitize("""<img \"\"\"><script>alert("XSS")</script>">""")
+      @test """<img></img>&quot;&gt;""" == HTMLSanitizer.sanitize("""<img \"\"\"><script>alert("XSS")</script>">""")
     end
 
     @testset "should not be possible to inject protocol-based JS" begin

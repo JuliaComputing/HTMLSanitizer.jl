@@ -7,7 +7,8 @@ export sanitize
 """
     sanitize(input::AbstractString; isfragment = true, whitelist = WHITELIST, prettyprint = false)
 
-Sanitizes the HTML input according to `whitelist`.
+Sanitizes the HTML input according to `whitelist`. Also escapes `<`, `>`, `'`, `"`,` and `&`
+in for HTML tag contents.
 
 - `isfragment`: If true, removes enclosing `<HTML>` tags from the output.
 - `whitelist`: Whitelist for allowed elements and attributes.
@@ -78,7 +79,19 @@ end
 
 sanitize_element(el::HTMLElement{:HTML}, whitelist) = el
 
-sanitize_element(el::HTMLText, whitelist) = el
+function sanitize_element(el::HTMLText, whitelist)
+    el.text = escape_html(el.text)
+    return el
+end
+
+function escape_html(str::AbstractString)
+    str = replace(str, "&" =>"&amp;")
+    str = replace(str, "\""=>"&quot;")
+    str = replace(str, "'" =>"&#39;")
+    str = replace(str, "<" =>"&lt;")
+    str = replace(str, ">" =>"&gt;")
+    return str
+end
 
 const REGEX_PROTOCOL = r"\A\s*([^\/#]*?)(?:\:|&#0*58|&#x0*3a)"i
 
