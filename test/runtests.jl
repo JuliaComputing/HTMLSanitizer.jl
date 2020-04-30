@@ -47,15 +47,15 @@ using Test
   end
 
   @testset "test_whitelisted_longdesc_schemes_are_allowed" begin
-    stuff = """<img longdesc="http://longdesc.com" src="./foo.jpg"></img>"""
+    stuff = """<img longdesc="http://longdesc.com" src="./foo.jpg"/>"""
     html  = HTMLSanitizer.sanitize(stuff)
     @test stuff == html
   end
 
   @testset "test_weird_longdesc_schemes_are_removed" begin
-    stuff = """<img src="./foo.jpg" longdesc="javascript:alert(1)"></img>"""
+    stuff = """<img src="./foo.jpg" longdesc="javascript:alert(1)"/>"""
     html  = HTMLSanitizer.sanitize(stuff)
-    @test """<img src="./foo.jpg"></img>""" == html
+    @test """<img src="./foo.jpg"/>""" == html
   end
 
   @testset "test_standard_schemes_are_removed_if_not_specified_in_anchor_schemes" begin
@@ -153,30 +153,30 @@ end
 
 @testset "urls" begin
   @testset "relative" begin
-    orig = """<img src="foo/bar.html"></img>"""
+    orig = """<img src="foo/bar.html"/>"""
     @test sanitize(orig) == orig
 
-    orig = """<img src="/foo/bar.html"></img>"""
+    orig = """<img src="/foo/bar.html"/>"""
     @test sanitize(orig) == orig
 
-    orig = """<img src="//foo/bar.html"></img>"""
+    orig = """<img src="//foo/bar.html"/>"""
     @test sanitize(orig) == orig
 
-    orig = """<img src="./foo/bar.html"></img>"""
+    orig = """<img src="./foo/bar.html"/>"""
     @test sanitize(orig) == orig
 
-    orig = """<img src="/asd://foo/bar.html"></img>"""
+    orig = """<img src="/asd://foo/bar.html"/>"""
     @test sanitize(orig) == orig
   end
 
   @testset "protocols" begin
-    orig = """<img src="asd://foo/bar.html"></img>"""
-    @test sanitize(orig) == "<img></img>"
+    orig = """<img src="asd://foo/bar.html"/>"""
+    @test sanitize(orig) == "<img/>"
 
-    orig = """<img src="http://foo/bar.html"></img>"""
+    orig = """<img src="http://foo/bar.html"/>"""
     @test sanitize(orig) == orig
 
-    orig = """<img src="https://foo/bar.html"></img>"""
+    orig = """<img src="https://foo/bar.html"/>"""
     @test sanitize(orig) == orig
   end
 end
@@ -184,6 +184,17 @@ end
 @testset "edge case" begin
   html = read(joinpath(@__DIR__, "testhtml.html"), String)
   sanitize(html) == read(joinpath(@__DIR__, "testhtml_out.html"), String)
+end
+
+@testset "relative urls" begin
+  @test HTMLSanitizer.is_relative_url("/foo")
+  @test HTMLSanitizer.is_relative_url("//foo")
+  @test HTMLSanitizer.is_relative_url("./foo")
+  @test HTMLSanitizer.is_relative_url("../foo")
+  @test HTMLSanitizer.is_relative_url("foo")
+  @test !HTMLSanitizer.is_relative_url("https://foo")
+  @test !HTMLSanitizer.is_relative_url("http://foo")
+  @test !HTMLSanitizer.is_relative_url("bar://foo")
 end
 
 include("malicious_html.jl")

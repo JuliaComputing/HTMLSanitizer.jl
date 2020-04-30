@@ -127,7 +127,13 @@ end
 # 2. starts with `//` (protocol-relative).
 # 3. starts with `../`/`./` (relative directory traversal)
 # 4. doesn't start with either of the above and doesn't start with a protocol (e.g. `foo/bar.html`)
-is_relative_url(url) = occursin(r"\.?\.?//?"i, url) || !occursin(r"^\w+://"i, url)
+function is_relative_url(url)
+    if occursin(r"^\.?\.?//?"i, url)
+        return true
+    else
+        return !occursin(r"^\w+://"i, url)
+    end
+end
 
 """
 Default whitelist. Allows many elements and attributes, but crucially removes `<script>` elements
