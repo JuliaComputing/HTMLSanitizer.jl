@@ -1,6 +1,6 @@
 # HTMLSanitizer
 
-[![Build Status](https://travis-ci.com/JuliaComputing/HTMLSanitizer.jl.svg?branch=master)](https://travis-ci.com/JuliaComputing/HTMLSanitizer.jl)
+[![CI](https://github.com/JuliaComputing/HTMLSanitizer.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaComputing/HTMLSanitizer.jl/actions/workflows/CI.yml)
 
 Whitelist-based HTML sanitizer inspired by [sanitize](https://github.com/rgrove/sanitize/) and [html-pipeline](https://github.com/jch/html-pipeline/blob/13057c4dcde5e769dd116682f1bed7e65e920b40/lib/html/pipeline/sanitization_filter.rb).
 
