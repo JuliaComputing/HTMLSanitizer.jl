@@ -6,6 +6,10 @@ Whitelist-based HTML sanitizer inspired by [sanitize](https://github.com/rgrove/
 
 HTMLSanitizer.jl parses your source HTML with [Gumbo.jl](https://github.com/JuliaWeb/Gumbo.jl) and then filters tags and attributes according to a whitelist. The default whitelists are fairly close to GitHubs pipeline for rendering markdown to HTML.
 
+> [!WARNING]
+>
+> HTMLSanitizer removes the content of `<math>` and `<svg>` [foreign elements](https://html.spec.whatwg.org/multipage/syntax.html#foreign-elements) by default. Allowing these elements may cause vulnerabilities.
+
 ## Usage
 
 ```
