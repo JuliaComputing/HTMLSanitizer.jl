@@ -124,6 +124,16 @@ using Test
       </details>"""
     @test replace(orig, "\n" => "") == replace(HTMLSanitizer.sanitize(orig), "\n" => "")
   end
+
+  @testset "svg" begin
+    orig = """<svg><style>&lt;/style>&lt;img src onerror=alert(1)>"""
+    @test "" == HTMLSanitizer.sanitize(orig)
+  end
+
+  @testset "math" begin
+    orig = """<math><style>&lt;/style>&lt;img src onerror=alert(1)>"""
+    @test "" == HTMLSanitizer.sanitize(orig)
+  end
 end
 
 @testset "preserve relevant whitespace" begin

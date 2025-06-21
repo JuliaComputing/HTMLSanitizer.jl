@@ -147,7 +147,7 @@ const WHITELIST = Dict(
         "summary","details","caption","figure","figcaption","abbr","bdo","cite","dfn","mark",
         "small","span","time","wbr","center"
     ],
-    :remove_contents => ["script"],
+    :remove_contents => ["script", "math", "svg"],
     :attributes => Dict(
         "a"          => ["href"],
         "img"        => ["src", "longdesc"],
